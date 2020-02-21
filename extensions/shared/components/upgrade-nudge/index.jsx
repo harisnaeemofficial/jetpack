@@ -32,36 +32,45 @@ const getTitle = ( customTitle, planName ) => {
 		: __( 'Upgrade to a paid plan to use this block on your site.', 'jetpack' );
 };
 
-export const UpgradeNudge = ( { planName, trackViewEvent, trackClickEvent, upgradeUrl, title, subtitle } ) => {
+export const UpgradeNudge = ( {
+	planName,
+	trackViewEvent,
+	trackClickEvent,
+	upgradeUrl,
+	title,
+	subtitle,
+} ) => {
 	useEffect( () => {
 		if ( planName ) {
 			trackViewEvent();
 		}
 	}, [ planName ] );
-	<BlockNudge
-		buttonLabel={ __( 'Upgrade', 'jetpack' ) }
-		icon={
-			<GridiconStar
-				className="jetpack-upgrade-nudge__icon"
-				size={ 18 }
-				aria-hidden="true"
-				role="img"
-				focusable="false"
-			/>
-		}
-		href={ upgradeUrl }
-		onClick={ trackEvent }
-		title={ getTitle( title, planName ) }
-		subtitle={
-			subtitle
-				? subtitle
-				: __(
-						'You can try it out before upgrading, but only you will see it. It will be hidden from your visitors until you upgrade.',
-						'jetpack'
-				  )
-		}
-	/>
-);
+	return (
+		<BlockNudge
+			buttonLabel={ __( 'Upgrade', 'jetpack' ) }
+			icon={
+				<GridiconStar
+					className="jetpack-upgrade-nudge__icon"
+					size={ 18 }
+					aria-hidden="true"
+					role="img"
+					focusable="false"
+				/>
+			}
+			href={ upgradeUrl }
+			onClick={ trackClickEvent }
+			title={ getTitle( title, planName ) }
+			subtitle={
+				subtitle
+					? subtitle
+					: __(
+							'You can try it out before upgrading, but only you will see it. It will be hidden from your visitors until you upgrade.',
+							'jetpack'
+					  )
+			}
+		/>
+	);
+};
 
 export default compose( [
 	withSelect( ( select, { plan: planSlug, blockName } ) => {
