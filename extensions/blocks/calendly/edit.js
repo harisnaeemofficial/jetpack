@@ -8,6 +8,7 @@ import queryString from 'query-string';
 /**
  * WordPress dependencies
  */
+import apiFetch from '@wordpress/api-fetch';
 import { BlockControls, BlockIcon, InspectorControls } from '@wordpress/block-editor';
 import {
 	Button,
@@ -15,10 +16,11 @@ import {
 	Notice,
 	PanelBody,
 	Placeholder,
+	Spinner,
 	ToggleControl,
 	Toolbar,
 } from '@wordpress/components';
-import { useState } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import { __, _x } from '@wordpress/i18n';
 import { getBlockDefaultClassName } from '@wordpress/blocks';
 
@@ -54,6 +56,7 @@ export default function CalendlyEdit( props ) {
 	} = validatedAttributes;
 	const [ embedCode, setEmbedCode ] = useState( '' );
 	const [ notice, setNotice ] = useState();
+	const [ resolvingUrl, setResolveUrl ] = useState( false );
 
 	const setErrorNotice = () =>
 		setNotice(
@@ -64,6 +67,25 @@ export default function CalendlyEdit( props ) {
 				) }
 			</>
 		);
+
+	useEffect( () => {
+		if ( ! url || 'link' === style ) {
+			return;
+		}
+		setResolveUrl( true );
+		apiFetch( { path: `/wpcom/v2/resolve-redirect/${ url }` } ).then(
+			response => {
+				setResolveUrl( false );
+
+				const resolvedStatusCode = response.status ? parseInt( response.status, 10 ) : null;
+				if ( resolvedStatusCode && resolvedStatusCode >= 400 ) {
+					setAttributes( { url: undefined } );
+					setErrorNotice();
+				}
+			},
+			() => setResolveUrl( false )
+		);
+	}, [ url ] );
 
 	const parseEmbedCode = event => {
 		if ( ! event ) {
@@ -79,9 +101,24 @@ export default function CalendlyEdit( props ) {
 			return;
 		}
 
-		const newValidatedAttributes = getValidatedAttributes( attributeDetails, newAttributes );
+		setResolveUrl( true );
 
-		setAttributes( newValidatedAttributes );
+		apiFetch( { path: `/wpcom/v2/resolve-redirect/${ newAttributes.url }` } ).then(
+			response => {
+				setResolveUrl( false );
+
+				const resolvedStatusCode = response.status ? parseInt( response.status, 10 ) : null;
+				if ( resolvedStatusCode && resolvedStatusCode >= 400 ) {
+					setAttributes( { url: undefined } );
+					setErrorNotice();
+					return;
+				}
+
+				const newValidatedAttributes = getValidatedAttributes( attributeDetails, newAttributes );
+				setAttributes( newValidatedAttributes );
+			},
+			() => setResolveUrl( false )
+		);
 	};
 
 	const embedCodeForm = (
@@ -107,6 +144,13 @@ export default function CalendlyEdit( props ) {
 				</ExternalLink>
 			</div>
 		</>
+	);
+
+	const blockEmbedding = (
+		<div className="wp-block-embed is-loading">
+			<Spinner />
+			<p>{ __( 'Embedding…', 'jetpack' ) }</p>
+		</div>
 	);
 
 	const blockPlaceholder = (
@@ -256,6 +300,10 @@ export default function CalendlyEdit( props ) {
 			) }
 		</InspectorControls>
 	);
+
+	if ( resolvingUrl ) {
+		return blockEmbedding;
+	}
 
 	const classes = `${ className } calendly-style-${ style }`;
 
