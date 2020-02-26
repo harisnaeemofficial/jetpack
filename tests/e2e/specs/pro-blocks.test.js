@@ -8,7 +8,6 @@ import { connectThroughWPAdminIfNeeded } from '../lib/flows/jetpack-connect';
 import { resetWordpressInstall, getNgrokSiteUrl, activateModule } from '../lib/utils-helper';
 import SimplePaymentBlock from '../lib/blocks/simple-payments';
 import WordAdsBlock from '../lib/blocks/word-ads';
-import PinterestBlock from '../lib/blocks/pinterest';
 
 describe( 'Paid blocks', () => {
 	beforeAll( async () => {
